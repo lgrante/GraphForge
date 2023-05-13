@@ -84,7 +84,8 @@ function createGraph<T>({
         element = nodeInnerElement(d);
       }
       return ReactDOMServer.renderToString(element);
-    });
+    })
+    .call(drag(simulation));
 
   simulation.on('tick', () => {
     edge
