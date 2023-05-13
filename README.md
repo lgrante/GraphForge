@@ -1,1 +1,3 @@
-A little POC to show how to integrate D3 with React.
+💪 GraphForge is a  powerful React library for creating and displaying customizable graphs based on the D3 library. With GraphForge, you can easily create complex graphs that depict relationships between nodes and edges in your data.
+
+🔧 GraphForge provides a highly customizable component that allows you to control every aspect of your graph, from the layout and style to the data points and labels. You can use the built-in tools to create basic graphs quickly, or dive deep into the library's advanced features to create complex, interactive visualizations that allow users to explore your data in new and exciting ways.
