@@ -10,7 +10,8 @@ type TaskState = 'TODO' | 'DOING' | 'DONE';
 
 function getNodeAttributes (): SVGCircleStyleAttributes<any> {
   const radius = {
-    'PNode': 80,
+    //'PNode': 80,
+    'PNode': 10,
     'UNode': 60,
     'TNode': 40
   };
