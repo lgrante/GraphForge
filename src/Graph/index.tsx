@@ -4,6 +4,8 @@ import { useRef, useEffect, ReactElement } from 'react';
 import createGraph from './d3';
 import {GraphProps} from './types';
 
+import './style.css';
+
 
 function Graph<T>(props: GraphProps<T>): ReactElement {
   const graphContainerRef = useRef(null);
@@ -13,7 +15,6 @@ function Graph<T>(props: GraphProps<T>): ReactElement {
     if (graphContainerRef.current.children.length > 0) {
       return;
     }
-    console.log({props});
     createGraph<T>({
       ref: graphContainerRef,
       ...props

@@ -1,3 +1,3 @@
 export function getInsribedRectInCircle (radius: number): number {
-  return Math.sqrt(2) * radius;
+  return Math.sqrt(Math.pow(2 * radius, 2) / 2);
 }
