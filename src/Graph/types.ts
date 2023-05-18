@@ -34,7 +34,7 @@ export interface GraphProps<T> {
   nodeAttributes?: SVGCircleStyleAttributes<T>,
   nodeInnerElement?: ReactElement | ((node: T) => ReactElement),
   edgeAttributes?: SVGLineStyleAttributes<T>,
-  edgeLabel?: string | ((node: T) => string),
+  edgeLabel?: string | ((edge: Edge) => string),
   edgeLabelAttributes?: SVGTextStyleAttributes<T>,
   arrowHeight?: number,
   arrowWidth?: number,

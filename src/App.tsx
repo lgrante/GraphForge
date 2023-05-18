@@ -78,6 +78,10 @@ const graphProps: GraphProps<any> = {
     stroke: 'white',
     strokeWidth: (d => (d.source.__typename === 'PNode' ? 10 : 2))
   },
+  edgeLabel: 'A label',
+  edgeLabelAttributes: {
+    fill: 'white'
+  },
   nodeInnerElement: getNodeInnerElement,
   arrowAttributes: {
     fill: 'green',
