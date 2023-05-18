@@ -5,7 +5,7 @@ import * as d3 from 'd3';
 import * as ReactDOMServer from 'react-dom/server';
 
 import {CreateGraphParams} from './types';
-import {getInsribedRectInCircle} from './utils';
+import {getInsribedRectInCircle, isRectangleContained, translatePoint} from './utils';
 
 
 function processNodeData<T, D>(
@@ -38,7 +38,7 @@ function getMatchingSVGElement<T> (
   nodeIdProperty: string
 ) {
   const id = node[nodeIdProperty];
-  const nodeElement = element.filter(md => md[nodeIdProperty] === id).node();
+  const nodeElement = element.filter(md => md[nodeIdProperty] === id);
 
   return nodeElement;
 }
@@ -49,23 +49,23 @@ function getNodeInnerElementSize<T> (
   node: any,
   nodeIdProperty: string
 ) {
-  /**
-   * TODO: Understand why the foreignObject rectangle doesn't take the while size of the circle for the Project node.
-   */
-  const nodeElement = getMatchingSVGElement<T>(element, node, nodeIdProperty);
+  const nodeElement = getMatchingSVGElement<T>(element, node, nodeIdProperty).node();
   const radius = nodeElement.r.baseVal.value;
 
   return getInsribedRectInCircle(radius);
 }
 
 
-function isRectangleContained(innerRect, outerRect) {
-  return (
-    innerRect.left >= outerRect.left &&
-    innerRect.right <= outerRect.right &&
-    innerRect.top >= outerRect.top &&
-    innerRect.bottom <= outerRect.bottom
-  );
+function setAttributes (
+  element,
+  attributes: any
+) {
+  for (const key in attributes) {
+    const name = key.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`);
+    let value = attributes[key];
+
+    element.attr(name, value);
+  }
 }
 
 
@@ -81,7 +81,10 @@ function createGraph<T>({
   // TODO: Integrate these parameters. I'm too tired and lazy to do it now :p.
   edgeAttributes,
   edgeLabel,
-  edgeLabelAttributes
+  edgeLabelAttributes,
+  arrowHeight,
+  arrowWidth,
+  arrowAttributes
 }: CreateGraphParams<T>) {
 
   const nodeInnerElementId = (node: T) => `node_inner_element_${node[nodeIdProperty]}`;
@@ -99,6 +102,8 @@ function createGraph<T>({
     strokeWidth: 5,
     stroke: 'white'
   };
+  const defaultArrowHeight = 20;
+  const defaultArrowWidth = 20;
 
   const edgeSVG = svg.append('g')
     .selectAll('line')
@@ -107,6 +112,12 @@ function createGraph<T>({
     .attr('stroke', 'white')
     .attr('stroke-width', 2)
 
+  const arrowSVG = svg.append('g')
+    .selectAll('polygon')
+    .data(edges.filter(edge => edge.direction !== undefined))
+    .join('polygon')
+    .attr('fill', 'white')
+
   const nodeSVG = svg.append('g')
     .selectAll('circle')
     .data(nodes)
@@ -114,13 +125,12 @@ function createGraph<T>({
     .call(drag(simulation));
 
   nodeAttributes = !nodeAttributes ? defaultNodeAttributes : nodeAttributes;
+  arrowHeight = !arrowHeight ? defaultArrowHeight : arrowHeight;
+  arrowWidth = !arrowWidth ? defaultArrowWidth : arrowWidth;
 
-  for (const key in nodeAttributes) {
-    const name = key.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`);
-    let value = nodeAttributes[key];
-
-    nodeSVG.attr(name, value);
-  }
+  setAttributes(nodeSVG, nodeAttributes);
+  setAttributes(edgeSVG, edgeAttributes);
+  setAttributes(arrowSVG, arrowAttributes);
 
   const nodeInnerElementSVG = svg.append('g')
     .selectAll('foreignObject')
@@ -137,8 +147,8 @@ function createGraph<T>({
     .call(drag(simulation));
 
   nodeSVG.attr('r', d => {
-    const circle = getMatchingSVGElement(nodeSVG, d, nodeIdProperty);
-    const foreignObject = getMatchingSVGElement<T>(nodeInnerElementSVG, d, nodeIdProperty);
+    const circle = getMatchingSVGElement(nodeSVG, d, nodeIdProperty).node();
+    const foreignObject = getMatchingSVGElement<T>(nodeInnerElementSVG, d, nodeIdProperty).node();
     const innerElement = foreignObject.firstChild;
 
     const foreignObjectRect = foreignObject.getBoundingClientRect();
@@ -164,21 +174,52 @@ function createGraph<T>({
       .attr('x2', d => d.target.x)
       .attr('y2', d => d.target.y);
 
+    arrowSVG
+      .attr('points', d => {
+        const source = getMatchingSVGElement<T>(nodeSVG, d.source, nodeIdProperty);
+        const target = getMatchingSVGElement<T>(nodeSVG, d.target, nodeIdProperty);
+        const direction = d.direction;
+        const radius = direction ? target.attr('r') : source.attr('r');
+
+        const x1 = d.source.x, y1 = d.source.y;
+        const x2 = d.target.x, y2 = d.target.y;
+
+        const dx = direction ? (x1 - x2) : (x2 - x1);
+        const dy = direction ? (y1 - y2) : (y2 - y1);
+        const origin = direction ? {x: x2, y: y2} : {x: x1, y: y1};
+
+        const vertex = translatePoint(origin, {x: dx, y: dy}, radius); 
+        const footAltitude = translatePoint(vertex, {x: dx, y: dy}, arrowHeight);
+
+        const vectorAngle = Math.atan(dy / dx);
+        const leftVertex = translatePoint(footAltitude, vectorAngle + Math.PI / 2, arrowWidth / 2);
+        const rightVertex = translatePoint(footAltitude, vectorAngle - Math.PI / 2, arrowWidth / 2);
+
+        return `${vertex.x},${vertex.y} ${leftVertex.x},${leftVertex.y} ${rightVertex.x},${rightVertex.y}`
+      });
+
     nodeSVG
       .attr('cx', d => d.x)
       .attr('cy', d => d.y);
 
-
     nodeInnerElementSVG
       .attr('x', d => {
-        const nodeBBox = getMatchingSVGElement<T>(nodeSVG, d, nodeIdProperty).getBBox();
-        const innerNodeElementBBox = getMatchingSVGElement<T>(nodeInnerElementSVG, d, nodeIdProperty).getBBox();
+        const nodeBBox = getMatchingSVGElement<T>(nodeSVG, d, nodeIdProperty)
+          .node()
+          .getBBox();
+        const innerNodeElementBBox = getMatchingSVGElement<T>(nodeInnerElementSVG, d, nodeIdProperty)
+          .node()
+          .getBBox();
 
         return nodeBBox.x + (nodeBBox.width / 2) - (innerNodeElementBBox.width / 2);
       })
       .attr('y', d => {
-        const nodeBBox = getMatchingSVGElement<T>(nodeSVG, d, nodeIdProperty).getBBox();
-        const innerNodeElementBBox = getMatchingSVGElement<T>(nodeInnerElementSVG, d, nodeIdProperty).getBBox();
+        const nodeBBox = getMatchingSVGElement<T>(nodeSVG, d, nodeIdProperty)
+          .node()
+          .getBBox();
+        const innerNodeElementBBox = getMatchingSVGElement<T>(nodeInnerElementSVG, d, nodeIdProperty)
+          .node()
+          .getBBox();
 
         return nodeBBox.y + (nodeBBox.height / 2) - (innerNodeElementBBox.height / 2);
       });

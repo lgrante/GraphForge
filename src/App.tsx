@@ -74,7 +74,14 @@ const graphProps: GraphProps<any> = {
   edges: data.edges,
   nodeIdProperty: 'id',
   nodeAttributes: getNodeAttributes(),
+  edgeAttributes: {
+    stroke: 'white',
+    strokeWidth: (d => (d.source.__typename === 'PNode' ? 10 : 2))
+  },
   nodeInnerElement: getNodeInnerElement,
+  arrowAttributes: {
+    fill: 'green',
+  }
 }
 
 function App(): ReactElement {
