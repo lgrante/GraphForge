@@ -8,12 +8,12 @@ import {CreateGraphParams} from './types';
 import {getInsribedRectInCircle, isRectangleContained, translatePoint} from './utils';
 
 
-function processNodeData<T, D>(
-  nodeSVG: T,
+function processElementData<T, D>(
+  element: T,
   data: D | ((nodeSVG: T) => D)
 ): D {
   if (typeof data === 'function') {
-    return data(nodeSVG);
+    return data(element);
   }
   return data;
 }
@@ -23,7 +23,7 @@ function renderNodeComponentToHTML<T>(
   node: T,
   renderNode: ReactElement | ((nodeSVG: T) => ReactElement)
 ) {
-  const nodeComponent = processNodeData<T, ReactElement>(node, renderNode);
+  const nodeComponent = processElementData<T, ReactElement>(node, renderNode);
   const htmlString = ReactDOMServer.renderToString(nodeComponent);
   const parser = new DOMParser();
   const document = parser.parseFromString(htmlString, 'text/html');
@@ -78,7 +78,6 @@ function createGraph<T>({
   nodeIdProperty,
   nodeAttributes,
   nodeInnerElement,
-  // TODO: Integrate these parameters. I'm too tired and lazy to do it now :p.
   edgeAttributes,
   edgeLabel,
   edgeLabelAttributes,
@@ -118,6 +117,15 @@ function createGraph<T>({
     .join('polygon')
     .attr('fill', 'white')
 
+  const edgeLabelSVG = svg.append('g')
+    .selectAll('text')
+    .data(edges)
+    .join('text');
+
+  if (edgeLabel) {
+    edgeLabelSVG.text(edgeLabel);
+  }
+
   const nodeSVG = svg.append('g')
     .selectAll('circle')
     .data(nodes)
@@ -128,9 +136,10 @@ function createGraph<T>({
   arrowHeight = !arrowHeight ? defaultArrowHeight : arrowHeight;
   arrowWidth = !arrowWidth ? defaultArrowWidth : arrowWidth;
 
-  setAttributes(nodeSVG, nodeAttributes);
   setAttributes(edgeSVG, edgeAttributes);
   setAttributes(arrowSVG, arrowAttributes);
+  setAttributes(edgeLabelSVG, edgeLabelAttributes);
+  setAttributes(nodeSVG, nodeAttributes);
 
   const nodeInnerElementSVG = svg.append('g')
     .selectAll('foreignObject')
@@ -173,6 +182,10 @@ function createGraph<T>({
       .attr('y1', d => d.source.y)
       .attr('x2', d => d.target.x)
       .attr('y2', d => d.target.y);
+
+    edgeLabelSVG
+      .attr('x', d => (d.source.x + d.target.x) / 2)
+      .attr('y', d => (d.source.y + d.target.y) / 2)
 
     arrowSVG
       .attr('points', d => {
