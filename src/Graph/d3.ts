@@ -4,7 +4,7 @@ import React, {ReactElement} from 'react';
 import * as d3 from 'd3';
 import * as ReactDOMServer from 'react-dom/server';
 
-import {CreateGraphParams} from './types';
+import {CreateGraphParams, SVGDataEventListeners, SVGEventListeners, TargetElementTagName} from './types';
 import {getInsribedRectInCircle, isRectangleContained, translatePoint} from './utils';
 
 
@@ -60,11 +60,45 @@ function setAttributes (
   element,
   attributes: any
 ) {
+  if (!element || !attributes) {
+    return;
+  }
+
   for (const key in attributes) {
     const name = key.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`);
     let value = attributes[key];
 
     element.attr(name, value);
+  }
+}
+
+
+function setEventListeners<T> (
+  element,
+  eventListeners: SVGDataEventListeners<T> | SVGEventListeners
+) {
+  if (!element || !eventListeners) {
+    return;
+  }
+
+  for (const key of Object.keys(eventListeners)) {
+    element.on(key, event => {
+      const callback = eventListeners[key];
+      const tagName = event.target.constructor.name;
+      let target = event.target;
+
+      if (tagName === 'SVGSVGElement') {
+        return callback(event, tagName);
+      }
+
+      if (tagName.startsWith('HTML')) {
+        while (target.constructor.name != 'SVGForeignObjectElement') {
+          target = target.parentNode;
+        }
+      }
+
+      callback(event, target.__data__, tagName);
+    });
   }
 }
 
@@ -83,14 +117,18 @@ function createGraph<T>({
   edgeLabelAttributes,
   arrowHeight,
   arrowWidth,
-  arrowAttributes
+  arrowAttributes,
+  nodeEventListeners,
+  edgeEventListeners,
+  edgeLabelEventListeners,
+  viewBoxEventListeners
 }: CreateGraphParams<T>) {
 
   const nodeInnerElementId = (node: T) => `node_inner_element_${node[nodeIdProperty]}`;
 
   const svg = d3.select(ref.current)
     .append('svg')
-    .attr('viewBox', [0, 0, width, height]);
+    .attr('viewBox', [0, 0, width, height])
 
   const simulation = d3.forceSimulation(nodes)
     .force('edgeSVG', d3.forceLink(edges).id(d => d.id).distance(100))
@@ -130,7 +168,7 @@ function createGraph<T>({
     .selectAll('circle')
     .data(nodes)
     .join('circle')
-    .call(drag(simulation));
+    .call(drag(simulation))
 
   nodeAttributes = !nodeAttributes ? defaultNodeAttributes : nodeAttributes;
   arrowHeight = !arrowHeight ? defaultArrowHeight : arrowHeight;
@@ -154,6 +192,12 @@ function createGraph<T>({
       return element.outerHTML;
     })
     .call(drag(simulation));
+
+  setEventListeners(nodeSVG, nodeEventListeners);
+  setEventListeners(nodeInnerElementSVG, nodeEventListeners);
+  setEventListeners(edgeSVG, edgeEventListeners);
+  setEventListeners(edgeLabelSVG, edgeLabelEventListeners);
+  setEventListeners(svg, viewBoxEventListeners);
 
   nodeSVG.attr('r', d => {
     const circle = getMatchingSVGElement(nodeSVG, d, nodeIdProperty).node();
