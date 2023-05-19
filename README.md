@@ -6,11 +6,9 @@
 
 ## API reference
 
-# GraphProps
+### GraphProps
 
-The interface representing the properties for the graph component.
-
-## Props
+The GraphProps represents the properties for the Graph component.
 
 `width: number`  
 The width of the graph SVG container in pixels.
