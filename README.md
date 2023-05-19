@@ -6,43 +6,130 @@
 
 ## API reference
 
-### GraphProps<T>
+# GraphProps
 
 The interface representing the properties for the graph component.
 
-#### Props
+## Props
 
-- `width` (`number`): The width of the graph SVG container in pixels.
+`width (number)`
+The width of the graph SVG container in pixels.
 
-- `height` (`number`): The height of the graph SVG container in pixels.
+`height: number`
+The height of the graph SVG container in pixels.
 
-- `nodes` (`T[]`): An array of objects representing the nodes in the graph.
+`nodes: T[]`
+An array of objects representing the nodes in the graph.
 
-- `edges` (`Edge[]`): An array of objects representing the edges in the graph.
+`edges: Edge[]` 
+An array of objects representing the edges in the graph.
 
-- `nodeIdProperty` (`string`): The property name of the nodes used as a unique identifier.
+`nodeIdProperty: string`
+The property name of the nodes used as a unique identifier.
 
-- `nodeAttributes` (`SVGCircleStyleAttributes<T>` | _optional_): Additional attributes to be applied to each node SVG circle element. It can be a direct value or a function that receives a node and returns the attribute value.
+`nodeAttributes: SVGCircleStyleAttributes<T>` (optional)
+Additional attributes to be applied to each node SVG circle element. It can be a direct value or a function that receives a node and returns the attribute value.
 
-- `nodeInnerElement` (`ReactElement` \| `(node: T) => ReactElement` | _optional_): The React component or function used to render the inner content of each node. It can be a static React element or a function that receives a node and returns a React element.
+**Example:**
 
-- `edgeAttributes` (`SVGLineStyleAttributes<T>` | _optional_): Additional attributes to be applied to each edge SVG line element. It can be a direct value or a function that receives an edge and returns the attribute value.
+```tsx
+// Using a function to dynamically set the node color
+const nodeAttributes = {
+  fill: (node) => (node.status === 'active' ? 'green' : 'gray'),
+  // other attributes...
+};
+```
 
-- `edgeLabel` (`string` \| `(edge: Edge) => string` | _optional_): The label text or function used to determine the label of each edge.
+`nodeInnerElement: ReactElement | (node: T) => ReactElement` (optional)
+The React component or function used to render the inner content of each node. It can be a static React element or a function that receives a node and returns a React element.
 
-- `edgeLabelAttributes` (`SVGTextStyleAttributes<T>` | _optional_): Additional attributes to be applied to each edge label SVG text element. It can be a direct value or a function that receives an edge and returns the attribute value.
+**Example:**
 
-- `arrowHeight` (`number` | _optional_): The height of the arrowheads for directed edges.
+```tsx
+// Using a custom component as the inner element
+const CustomNode = ({ node }) => (
+  <div className="custom-node">
+    <span>{node.name}</span>
+  </div>
+);
 
-- `arrowWidth` (`number` | _optional_): The width of the arrowheads for directed edges.
+// In the Graph component:
+<Graph
+  // other props...
+  nodeInnerElement={CustomNode}
+/>
+```
 
-- `arrowAttributes` (`SVGPolygonStyleAttributes<T>` | _optional_): Additional attributes to be applied to each arrowhead SVG polygon element. It can be a direct value or a function that receives an edge and returns the attribute value.
+`edgeAttributes: SVGLineStyleAttributes<T>` (optional)
+Additional attributes to be applied to each edge SVG line element. It can be a direct value or a function that receives an edge and returns the attribute value.
 
-- `nodeEventListeners` (`SVGDataEventListeners<T>` | _optional_): Event listeners for the node SVG elements. Each key is an SVG element event, and the corresponding value is the callback function that handles the event. The callback receives the event object, the data of the node, and the tag name of the target element.
+`edgeLabel: string | (edge: Edge) => string` (optional)
+The label text or function used to determine the label of each edge.
 
-- `edgeEventListeners` (`SVGDataEventListeners<Edge>` | _optional_): Event listeners for the edge SVG elements. Each key is an SVG element event, and the corresponding value is the callback function that handles the event. The callback receives the event object, the data of the edge, and the tag name of the target element.
+**Example:**
+```tsx
+// Using a function to dynamically set the edge label
+const edgeLabel = (edge) => `Edge ${edge.id}`;
 
-- `edgeLabelEventListeners` (`SVGDataEventListeners<Edge>` | _optional_): Event listeners for the edge label SVG text elements. Each key is an SVG element event, and the corresponding value is the callback function that handles the event. The callback receives the event object, the data of the edge, and the tag name of the target element.
+// In the Graph component:
+<Graph
+  // other props...
+  edgeLabel={edgeLabel}
+/>
+```
 
-- `viewBoxEventListeners` (`SVGEventListeners` | _optional_): Event listeners for the SVG viewBox element. Each key is an SVG element event, and the corresponding value is the callback function that handles the event. The callback receives the event object and the tag name of the target element.
+`edgeLabelAttributes: SVGTextStyleAttributes<T>` (optional)
+Additional attributes to be applied to each edge label SVG text element. It can be a direct value or a function that receives an edge and returns the attribute value.
 
+`arrowHeight: number` (optional) 
+The height of the arrowheads for directed edges.
+
+`arrowWidth: number` (optional)
+The width of the arrowheads for directed edges.
+
+`arrowAttributes: SVGPolygonStyleAttributes<T>` (optional)
+Additional attributes to be applied to each arrowhead SVG polygon element. It can be a direct value or a function that receives an edge and returns the attribute value.
+
+`nodeEventListeners: SVGDataEventListeners<T>` (optional)
+Event listeners for the node SVG elements. Each key is an SVG element event, and the corresponding value is the callback function that handles the event. The callback receives the event object, the data of the node, and the tag name of the target element.
+
+**Example**
+```tsx
+// Event listener example for nodes
+const handleNodeClick = (event, node, tagName) => {
+  console.log('Node clicked:', node);
+};
+
+// In the Graph component:
+<Graph
+  // other props...
+  nodeEventListeners={{
+    click: handleNodeClick,
+  }}
+/>
+```
+
+The listener function receives this parameters:
+
+- `event`: The event object represents the specific event that occurred, such as a click event. You can access properties of the event object, such as event.target, to retrieve information about the event.
+
+- `node`: The node parameter represents the data associated with the clicked node. It provides access to the properties and values of the specific node that triggered the event. You can access attributes like node.id, node.name, or any other custom properties defined for the node.
+
+- `tagName`: The tagName parameter indicates the HTML tag name of the target element that triggered the event. This can be useful when you want to perform different actions based on the type of element that was clicked.
+
+`edgeEventListeners: SVGDataEventListeners<Edge>` (optional)
+Event listeners for the edge SVG elements. Each key is an SVG element event, and the corresponding value is the callback function that handles the event. The callback receives the event object, the data of the edge, and the tag name of the target element.
+
+The listener function receives this paremeters:
+
+- `event`: The event object represents the specific event that occurred, such as a click or mouseover event. You can access properties of the event object, such as event.target, to retrieve information about the event.
+
+- `edge`: The edge parameter represents the data associated with the edge that triggered the event. It provides access to the properties and values of the specific edge that triggered the event. You can access attributes like edge.id, edge.source, edge.target, or any other custom properties defined for the edge.
+
+- `tagName`: The tagName parameter indicates the HTML tag name of the target element that triggered the event. This can be useful when you want to perform different actions based on the type of element that was interacted with.
+
+`edgeLabelEventListeners: SVGDataEventListeners<Edge>` (optional)
+Event listeners for the edge label SVG text elements. Each key is an SVG element event, and the corresponding value is the callback function that handles the event. The callback receives the event object, the data of the edge, and the tag name of the target element.
+
+`viewBoxEventListeners: SVGEventListeners` (optional)
+Event listeners for the SVG viewBox element. Each key is an SVG element event, and the corresponding value is the callback function that handles the event. The callback receives the event object and the tag name of the target element.
