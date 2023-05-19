@@ -18,6 +18,17 @@ export type SVGLineStyleAttributes<T> = MappedSVGAttributes<T, OriginalSVGLineSt
 export type SVGTextStyleAttributes<T> = MappedSVGAttributes<T, OriginalSVGTextStyleAttributes>;
 export type SVGPolygonStyleAttributes<T> = MappedSVGAttributes<T, OriginalSVGPolygonStyleAttributes>;
 
+export type TargetElementTagName = keyof SVGElementTagNameMap | keyof HTMLElementTagNameMap;
+export type SVGElementEvent = keyof SVGElementEventMap;
+
+export type SVGDataEventListeners<T> = Partial<{
+  [K in SVGElementEvent]: (e: Event, data: T, tagName: TargetElementTagName) => void
+}>;
+
+export type SVGEventListeners = Partial<{
+  [K in SVGElementEvent]: (e: Event, tagName: TargetElementTagName) => void
+}>;
+
 export interface Edge {
   id: Id,
   source: Id,
@@ -38,7 +49,11 @@ export interface GraphProps<T> {
   edgeLabelAttributes?: SVGTextStyleAttributes<T>,
   arrowHeight?: number,
   arrowWidth?: number,
-  arrowAttributes?: SVGPolygonStyleAttributes<T>
+  arrowAttributes?: SVGPolygonStyleAttributes<T>,
+  nodeEventListeners?: SVGDataEventListeners<T>,
+  edgeEventListeners?: SVGDataEventListeners<Edge>,
+  edgeLabelEventListeners?: SVGDataEventListeners<Edge>,
+  viewBoxEventListeners?: SVGEventListeners
 }
 
 export interface CreateGraphParams<T> extends GraphProps<T> {

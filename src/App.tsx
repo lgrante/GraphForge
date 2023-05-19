@@ -3,7 +3,7 @@ import Graph from './Graph';
 
 import data from './sample_data.json';
 import './App.css';
-import {GraphProps, SVGCircleStyleAttributes} from './Graph/types';
+import {GraphProps, SVGCircleStyleAttributes, TargetElementTagName} from './Graph/types';
 
 type NodeType = 'PNode' | 'UNode' | 'TNode';
 type TaskState = 'TODO' | 'DOING' | 'DONE';
@@ -85,6 +85,26 @@ const graphProps: GraphProps<any> = {
   nodeInnerElement: getNodeInnerElement,
   arrowAttributes: {
     fill: 'green',
+  },
+  nodeEventListeners: {
+    'click': (e: Event, data: any, tagName: TargetElementTagName) => {
+      console.log({e, data, tagName});
+    }
+  },
+  edgeEventListeners: {
+    'mouseover': (e: Event, data: any, tagName: TargetElementTagName) => {
+      console.log({e, data, tagName});
+    }
+  },
+  edgeLabelEventListeners: {
+    'mouseover': (e: Event, data: any, tagName: TargetElementTagName) => {
+      console.log({e, data, tagName});
+    }
+  },
+  viewBoxEventListeners: {
+    'click': (e: Event, tagName: TargetElementTagName) => {
+      console.log({e, tagName});
+    }
   }
 }
 
