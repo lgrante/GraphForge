@@ -125,39 +125,34 @@ function createGraph<T>({
 }: CreateGraphParams<T>) {
 
   const nodeInnerElementId = (node: T) => `node_inner_element_${node[nodeIdProperty]}`;
+  let nodesCopy = nodes.map(d => Object.assign({}, d));
+  let edgesCopy = edges.map(d => Object.assign({}, d));
 
   const svg = d3.select(ref.current)
     .append('svg')
     .attr('viewBox', [0, 0, width, height])
 
-  const simulation = d3.forceSimulation(nodes)
-    .force('edgeSVG', d3.forceLink(edges).id(d => d.id).distance(100))
+  const simulation = d3.forceSimulation(nodesCopy)
+    .force('edgeSVG', d3.forceLink(edgesCopy).id(d => d.id).distance(100))
     .force('charge', d3.forceManyBody().strength(-500))
     .force('center', d3.forceCenter(width / 2, height / 2));
 
-  const defaultNodeAttributes = {
-    strokeWidth: 5,
-    stroke: 'white'
-  };
-  const defaultArrowHeight = 20;
-  const defaultArrowWidth = 20;
-
   const edgeSVG = svg.append('g')
     .selectAll('line')
-    .data(edges)
+    .data(edgesCopy)
     .join('line')
     .attr('stroke', 'white')
     .attr('stroke-width', 2)
 
   const arrowSVG = svg.append('g')
     .selectAll('polygon')
-    .data(edges.filter(edge => edge.direction !== undefined))
+    .data(edgesCopy.filter(edge => edge.direction !== undefined))
     .join('polygon')
     .attr('fill', 'white')
 
   const edgeLabelSVG = svg.append('g')
     .selectAll('text')
-    .data(edges)
+    .data(edgesCopy)
     .join('text');
 
   if (edgeLabel) {
@@ -166,11 +161,16 @@ function createGraph<T>({
 
   const nodeSVG = svg.append('g')
     .selectAll('circle')
-    .data(nodes)
+    .data(nodesCopy)
     .join('circle')
-    .call(drag(simulation))
+    .attr('r', 20)
+    .attr('stroke-width', 5)
+    .attr('stroke', 'white')
+    .call(drag(simulation));
 
-  nodeAttributes = !nodeAttributes ? defaultNodeAttributes : nodeAttributes;
+  const defaultArrowHeight = 20;
+  const defaultArrowWidth = 20;
+
   arrowHeight = !arrowHeight ? defaultArrowHeight : arrowHeight;
   arrowWidth = !arrowWidth ? defaultArrowWidth : arrowWidth;
 
@@ -181,17 +181,42 @@ function createGraph<T>({
 
   const nodeInnerElementSVG = svg.append('g')
     .selectAll('foreignObject')
-    .data(nodes)
+    .data(nodesCopy)
     .join('foreignObject')
     .attr('width', d => getNodeInnerElementSize<T>(nodeSVG, d, nodeIdProperty))
     .attr('height', d => getNodeInnerElementSize<T>(nodeSVG, d, nodeIdProperty))
-    .html(d => {
-      const element = renderNodeComponentToHTML<T>(d, nodeInnerElement);
-
-      element.setAttribute('id', nodeInnerElementId(d));
-      return element.outerHTML;
-    })
     .call(drag(simulation));
+
+  if (nodeInnerElement) {
+    nodeInnerElementSVG
+      .html(d => {
+        const element = renderNodeComponentToHTML<T>(d, nodeInnerElement);
+
+        element.setAttribute('id', nodeInnerElementId(d));
+        return element.outerHTML;
+      });
+
+    nodeSVG.attr('r', d => {
+      const circle = getMatchingSVGElement(nodeSVG, d, nodeIdProperty).node();
+      const foreignObject = getMatchingSVGElement<T>(nodeInnerElementSVG, d, nodeIdProperty).node();
+      const innerElement = foreignObject.firstChild;
+
+      const foreignObjectRect = foreignObject.getBoundingClientRect();
+      const innerElementRect = innerElement.getBoundingClientRect();
+
+      if (!isRectangleContained(innerElementRect, foreignObjectRect)) {
+        const margin = 14;
+        const largestSize = Math.max(innerElementRect.height, innerElementRect.width) + margin;
+
+        nodeInnerElementSVG.filter(d2 => d2.id === d.id)
+          .attr('width', largestSize)
+          .attr('height', largestSize);
+        return Math.sqrt(2 * Math.pow(largestSize, 2)) / 2;
+      }
+
+      return circle.r.baseVal.value;
+    });
+  }
 
   setEventListeners(nodeSVG, nodeEventListeners);
   setEventListeners(nodeInnerElementSVG, nodeEventListeners);
@@ -199,26 +224,6 @@ function createGraph<T>({
   setEventListeners(edgeLabelSVG, edgeLabelEventListeners);
   setEventListeners(svg, viewBoxEventListeners);
 
-  nodeSVG.attr('r', d => {
-    const circle = getMatchingSVGElement(nodeSVG, d, nodeIdProperty).node();
-    const foreignObject = getMatchingSVGElement<T>(nodeInnerElementSVG, d, nodeIdProperty).node();
-    const innerElement = foreignObject.firstChild;
-
-    const foreignObjectRect = foreignObject.getBoundingClientRect();
-    const innerElementRect = innerElement.getBoundingClientRect();
-
-    if (!isRectangleContained(innerElementRect, foreignObjectRect)) {
-      const margin = 14;
-      const largestSize = Math.max(innerElementRect.height, innerElementRect.width) + margin;
-
-      nodeInnerElementSVG.filter(d2 => d2.id === d.id)
-        .attr('width', largestSize)
-        .attr('height', largestSize);
-      return Math.sqrt(2 * Math.pow(largestSize, 2)) / 2;
-    }
-
-    return circle.r.baseVal.value;
-  });
 
   simulation.on('tick', () => {
     edgeSVG

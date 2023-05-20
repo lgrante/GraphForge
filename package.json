@@ -3,7 +3,7 @@
   "publishConfig": {
     "registry": "https://npm.pkg.github.com/graph-forge"
   },
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "GraphForge is a powerful React library for creating and displaying customizable graphs based on the D3 library. With GraphForge, you can easily create complex graphs that depict relationships between nodes and edges in your data.",
   "author": "Louis Grante",
   "license": "MIT",
