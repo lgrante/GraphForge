@@ -4,7 +4,7 @@ import { useRef, useEffect, ReactElement } from 'react';
 import createGraph from './d3';
 import {GraphProps} from './types';
 
-import './style.css';
+import './Graph.css';
 
 
 function Graph<T>(props: GraphProps<T>): ReactElement {
